@@ -9,44 +9,44 @@ import (
 )
 
 func WriteMessage(address string, message Message) error {
-    conn, err := net.Dial("tcp", address)
-    if err != nil {
-        return fmt.Errorf("connect to %s: %w", address, err)
-    }
-    defer conn.Close()
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return fmt.Errorf("connect to %s: %w", address, err)
+	}
+	defer conn.Close()
 
-    payload, err := json.Marshal(message)
-    if err != nil {
-        return fmt.Errorf("marshal message: %w", err)
-    }
+	payload, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("marshal message: %w", err)
+	}
 
-    if len(payload) > 1024*1024 {
-        return fmt.Errorf("message too large")
-    }
+	if len(payload) > 1024*1024 {
+		return fmt.Errorf("message too large")
+	}
 
-    frame := make([]byte, 4+len(payload))
+	frame := make([]byte, 4+len(payload))
 
-    binary.BigEndian.PutUint32(
-        frame[:4],
-        uint32(len(payload)),
-    )
+	binary.BigEndian.PutUint32(
+		frame[:4],
+		uint32(len(payload)),
+	)
 
-    copy(frame[4:], payload)
+	copy(frame[4:], payload)
 
-    for len(frame) > 0 {
-        n, err := conn.Write(frame)
-        if err != nil {
-            return fmt.Errorf("write message: %w", err)
-        }
+	for len(frame) > 0 {
+		n, err := conn.Write(frame)
+		if err != nil {
+			return fmt.Errorf("write message: %w", err)
+		}
 
-        if n == 0 {
-            return io.ErrShortWrite
-        }
+		if n == 0 {
+			return io.ErrShortWrite
+		}
 
-        frame = frame[n:]
-    }
+		frame = frame[n:]
+	}
 
-    return nil
+	return nil
 }
 
 func ReadMessage(conn net.Conn) (Message, error) {
@@ -65,6 +65,7 @@ func ReadMessage(conn net.Conn) (Message, error) {
 	return message, nil
 }
 
+// send a ping message to another service using tcp protocol
 func SendPing(address string) error {
 	message := Message{
 		Type: Ping.String(),
@@ -73,16 +74,46 @@ func SendPing(address string) error {
 	if err := WriteMessage(address, message); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
-func SendPong(conn net.Conn){
+// respond a pong message through the connection
+// not close the connection automatically
+func SendPong(conn net.Conn) error {
 	message := Message{
 		Type: Ping.String(),
 	}
 
-	
+	payload, err := json.Marshal(message)
+
+	if err != nil {
+		return fmt.Errorf("marshal message: %w", err)
+	}
+
+	frame := make([]byte, 4+len(payload))
+
+	binary.BigEndian.PutUint32(
+		frame[:4],
+		uint32(len(payload)),
+	)
+
+	copy(frame[4:], payload)
+
+	for len(frame) > 0 {
+		n, err := conn.Write(frame)
+		if err != nil {
+			return fmt.Errorf("write message: %w", err)
+		}
+
+		if n == 0 {
+			return io.ErrShortWrite
+		}
+
+		frame = frame[n:]
+	}
+
+	return nil
 }
 
 func readFrame(r io.Reader) ([]byte, error) {
