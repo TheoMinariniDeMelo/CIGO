@@ -13,7 +13,7 @@ import (
 var (
 	dispacherIp string = "localhost:8888"
 	repository string
-	hostIp string = "localhost:8000"
+	hostIp string = "localhost:8000"	
 )
 
 func Run() {
@@ -49,9 +49,6 @@ func Run() {
 		os.Exit(1)
 	}
 
-	
-	message := protocol.Message
-	
 }
 
 func handleConnection(conn net.Conn) {
