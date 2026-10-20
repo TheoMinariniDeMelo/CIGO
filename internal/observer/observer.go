@@ -1,19 +1,16 @@
 package observer
 
 import (
-	"fmt"
-	"log"
 	"net"
 	"os"
-
-	"github.com/TheoMinariniDeMelo/cigo/internal/protocol"
 	"github.com/spf13/cobra"
 )
 
 var (
 	dispacherIp string = "localhost:8888"
-	repository string
-	hostIp string = "localhost:8000"	
+	repository 	string
+	hostIp 		string = "localhost:8000"
+	configFile 	string = "./cigo.json"
 )
 
 func Run() {
@@ -42,17 +39,21 @@ func Run() {
 		},
 	}
 
+	configCmd := &cobra.Command{
+		Use: "config [configFile]",
+		Short: "Set config file for CI",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configFile = args[0]
+			return nil
+		},
+	}
+
 	rootCmd.AddCommand(dispacherCmd)
 	rootCmd.AddCommand(repositoryCmd)
+	rootCmd.AddCommand(configCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
-
-}
-
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-
 
 }
